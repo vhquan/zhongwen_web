@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    image: zhongwen:latest
+    ports:
+      - "80:3001"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3001"
+    volumes:
+      - zhongwen-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  zhongwen-data:

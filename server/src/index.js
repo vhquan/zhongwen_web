@@ -1,9 +1,13 @@
 import cors from "cors";
 import express from "express";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { db } from "./db.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const app = express();
+const webDist = resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
 
 app.use(cors());
 app.use(express.json());
@@ -226,6 +230,21 @@ app.post("/api/progress", (req, res) => {
 
   res.json({ wordId, mode, ...row });
 });
+
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true });
+});
+
+if (existsSync(webDist)) {
+  app.use(express.static(webDist));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      next();
+      return;
+    }
+    res.sendFile(resolve(webDist, "index.html"));
+  });
+}
 
 const HOST = process.env.HOST || "127.0.0.1";
 app.listen(PORT, HOST, () => {

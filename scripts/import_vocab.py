@@ -10,7 +10,17 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / "vocabulary_hsk1-3_3.0_and_hsk1-6_2.0.xlsx"
+XLSX = next(
+    (
+        path
+        for path in (
+            ROOT / "resources" / "vocabulary_hsk1-3_3.0_and_hsk1-6_2.0.xlsx",
+            ROOT / "vocabulary_hsk1-3_3.0_and_hsk1-6_2.0.xlsx",
+        )
+        if path.exists()
+    ),
+    ROOT / "resources" / "vocabulary_hsk1-3_3.0_and_hsk1-6_2.0.xlsx",
+)
 DB_PATH = ROOT / "data" / "zhongwen.sqlite"
 SCHEMA_PATH = ROOT / "scripts" / "schema.sql"
 
