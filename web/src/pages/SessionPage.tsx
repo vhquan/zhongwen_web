@@ -68,7 +68,12 @@ export function SessionPage() {
 
   async function submitDictation(event: FormEvent) {
     event.preventDefault();
-    if (!word || checked !== null) return;
+    if (!word) return;
+    if (checked !== null) {
+      nextCard();
+      return;
+    }
+    if (!answer.trim() || busy) return;
     const ok = checkPinyin(answer, word, ignoreTones);
     setChecked(ok);
     setBusy(true);
@@ -139,7 +144,7 @@ export function SessionPage() {
                 autoFocus
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
-                disabled={checked !== null}
+                readOnly={checked !== null}
                 placeholder="nǐ / ni3 / ni"
                 autoCapitalize="off"
                 autoCorrect="off"
@@ -159,7 +164,7 @@ export function SessionPage() {
                 Check
               </button>
             ) : (
-              <button type="button" className="button" onClick={nextCard}>
+              <button type="submit" className="button">
                 Next
               </button>
             )}
