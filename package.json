@@ -1,0 +1,13 @@
+{
+  "name": "zhongwen",
+  "private": true,
+  "scripts": {
+    "import": "python3 scripts/import_vocab.py",
+    "dev": "concurrently -k \"npm run dev --prefix server\" \"npm run dev --prefix web\"",
+    "start": "node scripts/ensure-db.mjs && npm run dev",
+    "postinstall": "npm install --prefix server && npm install --prefix web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

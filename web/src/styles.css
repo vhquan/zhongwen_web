@@ -1,0 +1,180 @@
+:root {
+  color: #1c1917;
+  background: #f5f1ea;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: #9a3412;
+}
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: #57534e;
+  margin-bottom: 0;
+}
+
+h1 {
+  font-size: 2.1rem;
+  margin: 0.2rem 0 0.6rem;
+}
+
+.lede,
+.muted {
+  color: #57534e;
+}
+
+.edition-grid,
+.level-list {
+  display: grid;
+  gap: 16px;
+}
+
+.card-link,
+.level-card,
+.card {
+  background: #fffaf3;
+  border: 1px solid #e7e0d6;
+  border-radius: 16px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 8px 24px rgba(28, 25, 23, 0.04);
+}
+
+.level-card,
+.session-head,
+.actions,
+.dictation {
+  display: flex;
+  gap: 12px;
+}
+
+.level-card,
+.session-head {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actions,
+.dictation {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.count {
+  font-weight: 700;
+}
+
+.button,
+.ghost,
+.secondary {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.button {
+  background: #9a3412;
+  color: #fff7ed;
+}
+
+.button.secondary,
+.secondary {
+  background: #e7e0d6;
+  color: #1c1917;
+}
+
+.ghost {
+  background: transparent;
+  color: #9a3412;
+  padding-left: 0;
+}
+
+input[type="text"],
+input:not([type="checkbox"]) {
+  display: block;
+  width: min(360px, 100%);
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #d6d3d1;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stroke-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stroke-cell {
+  background: #fff;
+  border: 1px solid #e7e0d6;
+  border-radius: 12px;
+}
+
+.pinyin {
+  font-size: 1.4rem;
+  margin: 8px 0;
+}
+
+.senses,
+.examples {
+  padding-left: 18px;
+}
+
+.pos {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 0.8rem;
+  text-transform: lowercase;
+  background: #faeeda;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.prompt-hanzi {
+  font-size: 3rem;
+  margin: 0 0 16px;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.ok {
+  color: #166534;
+}
+
+.ex-hanzi {
+  font-size: 1.05rem;
+}
