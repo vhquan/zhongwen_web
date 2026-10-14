@@ -7,6 +7,8 @@ import { checkPinyin } from "../pinyin";
 import type { StudyMode, Word } from "../types";
 
 type DictationResult = null | "correct" | "wrong" | "revealed" | "unknown";
+type SessionOutcome = "correct" | "wrong" | "unknown";
+type SessionEntry = { word: Word; outcome: SessionOutcome };
 type Gif = { embed: string; title: string };
 
 const MAX_FAILS = 3;
@@ -51,6 +53,10 @@ const REVEAL_GIF: Gif = {
   title: "sad cat",
 };
 
+function meaningOf(word: Word): string {
+  return word.senses.map((sense) => sense.meaningVi).filter(Boolean).join("; ") || "—";
+}
+
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i -= 1) {
@@ -75,6 +81,8 @@ export function SessionPage() {
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sessionLog, setSessionLog] = useState<SessionEntry[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
     if (!edition || !level) return;
@@ -89,6 +97,8 @@ export function SessionPage() {
         setSuccessGif(null);
         setUnknownGif(null);
         setShowHint(false);
+        setSessionLog([]);
+        setShowSummary(false);
       })
       .catch((err: Error) => setError(err.message));
   }, [edition, level]);
@@ -96,8 +106,26 @@ export function SessionPage() {
   const word = words[index];
   const remaining = useMemo(() => Math.max(words.length - index, 0), [words.length, index]);
   const locked = result === "correct" || result === "revealed" || result === "unknown";
+  const correctCount = sessionLog.filter((item) => item.outcome === "correct").length;
+  const wrongEntries = sessionLog.filter((item) => item.outcome === "wrong");
+  const unknownEntries = sessionLog.filter((item) => item.outcome === "unknown");
+
+  function logOutcome(entryWord: Word, outcome: SessionOutcome) {
+    setSessionLog((current) => {
+      if (current.some((item) => item.word.id === entryWord.id)) return current;
+      return [...current, { word: entryWord, outcome }];
+    });
+  }
+
+  function finishSession() {
+    setShowSummary(true);
+  }
 
   function nextCard() {
+    if (index + 1 >= words.length) {
+      finishSession();
+      return;
+    }
     setIndex((current) => current + 1);
     setFlipped(false);
     setAnswer("");
@@ -113,6 +141,7 @@ export function SessionPage() {
     setBusy(true);
     try {
       await postProgress(word.id, studyMode, review);
+      logOutcome(word, review);
       nextCard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save progress");
@@ -128,6 +157,7 @@ export function SessionPage() {
     setBusy(true);
     try {
       await postProgress(word.id, "dictation", "wrong");
+      logOutcome(word, "unknown");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save progress");
     } finally {
@@ -150,6 +180,7 @@ export function SessionPage() {
       setBusy(true);
       try {
         await postProgress(word.id, "dictation", "correct");
+        logOutcome(word, "correct");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not save progress");
       } finally {
@@ -164,6 +195,7 @@ export function SessionPage() {
       setBusy(true);
       try {
         await postProgress(word.id, "dictation", "wrong");
+        logOutcome(word, "wrong");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not save progress");
       } finally {
@@ -204,15 +236,63 @@ export function SessionPage() {
           <p className="eyebrow">
             HSK {edition} · Level {level} · {studyMode === "flashcard" ? "Flashcards" : "Dictation"}
           </p>
-          <h1>{word ? word.hanzi : "Session complete"}</h1>
+          <h1>{showSummary ? "Practice summary" : word ? word.hanzi : "Practice summary"}</h1>
         </div>
-        <p className="count">{remaining} left</p>
+        {showSummary ? null : (
+          <div className="session-head-actions">
+            <p className="count">{remaining} left</p>
+            <button type="button" className="ghost" onClick={finishSession}>
+              I'm done
+            </button>
+          </div>
+        )}
       </header>
       {error ? <p className="error">{error}</p> : null}
 
-      {!word ? (
+      {showSummary || !word ? (
         <section className="card">
-          <p>You finished this deck. Progress is saved in the local database.</p>
+          <p className="summary-total">
+            <strong>{sessionLog.length}</strong> words this run
+          </p>
+          <ul className="summary-counts">
+            <li>
+              <strong>{correctCount}</strong> correct
+            </li>
+            <li>
+              <strong>{wrongEntries.length}</strong> wrong
+            </li>
+            <li>
+              <strong>{unknownEntries.length}</strong> unknown
+            </li>
+          </ul>
+          {unknownEntries.length > 0 ? (
+            <div className="summary-list">
+              <h2>Unknown words</h2>
+              <ul>
+                {unknownEntries.map((item) => (
+                  <li key={item.word.id}>
+                    <span className="ex-hanzi">{item.word.hanzi}</span>
+                    <span className="pinyin-inline">{item.word.pinyin}</span>
+                    <span className="muted">{meaningOf(item.word)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {wrongEntries.length > 0 ? (
+            <div className="summary-list">
+              <h2>Wrong words</h2>
+              <ul>
+                {wrongEntries.map((item) => (
+                  <li key={item.word.id}>
+                    <span className="ex-hanzi">{item.word.hanzi}</span>
+                    <span className="pinyin-inline">{item.word.pinyin}</span>
+                    <span className="muted">{meaningOf(item.word)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <Link className="button" to={`/edition/${edition}`}>
             Back to levels
           </Link>
