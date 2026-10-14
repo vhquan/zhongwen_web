@@ -8,7 +8,7 @@ import type { StudyMode, Word } from "../types";
 
 type DictationResult = null | "correct" | "wrong" | "revealed";
 
-const MAX_FAILS = 5;
+const MAX_FAILS = 3;
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
