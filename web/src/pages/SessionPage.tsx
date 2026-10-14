@@ -429,6 +429,7 @@ export function SessionPage() {
               <div className="tease-gif">
                 <iframe src={reactionGif.embed} title={reactionGif.title} allowFullScreen />
               </div>
+              {result === "correct" ? <p className="tease">亲爱的，太棒了！</p> : null}
               {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
             </div>
           ) : null}
