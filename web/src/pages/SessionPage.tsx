@@ -247,7 +247,23 @@ export function SessionPage() {
             </button>
           </div>
           {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
-          {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
+          {result === "revealed" ? (
+            <div className="tease-row">
+              <div className="tease-gif">
+                <iframe
+                  src="https://giphy.com/embed/eEg1ziKuWI9m9jVv2a"
+                  title="sad cat"
+                  allowFullScreen
+                />
+              </div>
+              <div>
+                <p className="tease">你真傻，答案是</p>
+                <p className="tease-credit">
+                  <a href="https://giphy.com/gifs/sad-cat-me-rn-eEg1ziKuWI9m9jVv2a">via GIPHY</a>
+                </p>
+              </div>
+            </div>
+          ) : null}
           {result === "correct" || result === "revealed" ? <WordDetails word={word} /> : null}
         </section>
       )}
