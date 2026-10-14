@@ -7,25 +7,38 @@ import { checkPinyin } from "../pinyin";
 import type { StudyMode, Word } from "../types";
 
 type DictationResult = null | "correct" | "wrong" | "revealed";
+type Gif = { embed: string; title: string };
 
 const MAX_FAILS = 3;
 
-const FAIL_GIFS: Record<number, { embed: string; href: string; title: string }> = {
-  1: {
-    embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV",
-    href: "https://giphy.com/gifs/side-eye-sad-cat-ZJieMJ372LLjXsInfV",
-    title: "side-eye sad cat",
-  },
-  2: {
-    embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb",
-    href: "https://giphy.com/gifs/cat-meme-angry-stressed-f54Or4wFysQ7vVGeKb",
-    title: "angry cat",
-  },
+const SUCCESS_GIFS: Gif[] = [
+  { embed: "https://giphy.com/embed/l2Sq5GffrCyUMEXjW", title: "celebration" },
+  { embed: "https://giphy.com/embed/tIeCLkB8geYtW", title: "shaun the sheep" },
+  { embed: "https://giphy.com/embed/26tknCqiJrBQG6bxC", title: "debate clap" },
+  { embed: "https://giphy.com/embed/rkAzGXnC7gogtbhY5L", title: "cute cat" },
+  { embed: "https://giphy.com/embed/ummeQH0c3jdm2o3Olp", title: "bingo" },
+  { embed: "https://giphy.com/embed/E99OMc6pkdvGw", title: "snl" },
+  { embed: "https://giphy.com/embed/yJFeycRK2DB4c", title: "happy" },
+  { embed: "https://giphy.com/embed/IcJ6n6VJNjRNS", title: "dancing cat" },
+  { embed: "https://giphy.com/embed/KnK7ZMiTmgcxnod3nA", title: "yes" },
+  { embed: "https://giphy.com/embed/gZFHLPFHNpjwaondsz", title: "good vibes" },
+  { embed: "https://giphy.com/embed/A0Zt7yuDULiy4ofmVD", title: "happy cat" },
+  { embed: "https://giphy.com/embed/2wuzQFlpBSpZnyRgy3", title: "surprised kid" },
+  { embed: "https://giphy.com/embed/mBcAMbc1Nu3UDYd9l4", title: "sus cat" },
+  { embed: "https://giphy.com/embed/PdZj33WnsGgV5lo5vU", title: "sticker" },
+];
+
+function pickSuccessGif(): Gif {
+  return SUCCESS_GIFS[Math.floor(Math.random() * SUCCESS_GIFS.length)];
+}
+
+const FAIL_GIFS: Record<number, Gif> = {
+  1: { embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV", title: "side-eye sad cat" },
+  2: { embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb", title: "angry cat" },
 };
 
-const REVEAL_GIF = {
+const REVEAL_GIF: Gif = {
   embed: "https://giphy.com/embed/eEg1ziKuWI9m9jVv2a",
-  href: "https://giphy.com/gifs/sad-cat-me-rn-eEg1ziKuWI9m9jVv2a",
   title: "sad cat",
 };
 
@@ -48,6 +61,7 @@ export function SessionPage() {
   const [ignoreTones, setIgnoreTones] = useState(false);
   const [result, setResult] = useState<DictationResult>(null);
   const [failCount, setFailCount] = useState(0);
+  const [successGif, setSuccessGif] = useState<Gif | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,6 +76,7 @@ export function SessionPage() {
         setAnswer("");
         setResult(null);
         setFailCount(0);
+        setSuccessGif(null);
         setShowHint(false);
       })
       .catch((err: Error) => setError(err.message));
@@ -77,6 +92,7 @@ export function SessionPage() {
     setAnswer("");
     setResult(null);
     setFailCount(0);
+    setSuccessGif(null);
     setShowHint(false);
   }
 
@@ -116,6 +132,7 @@ export function SessionPage() {
     if (!answer.trim() || busy) return;
     const ok = checkPinyin(answer, word, ignoreTones);
     if (ok) {
+      setSuccessGif(pickSuccessGif());
       setResult("correct");
       setBusy(true);
       try {
@@ -155,8 +172,12 @@ export function SessionPage() {
   ]
     .filter(Boolean)
     .join(" ");
-  const failGif =
-    result === "revealed" ? REVEAL_GIF : result === "correct" ? undefined : FAIL_GIFS[failCount];
+  const reactionGif =
+    result === "correct"
+      ? successGif
+      : result === "revealed"
+        ? REVEAL_GIF
+        : FAIL_GIFS[failCount];
 
   return (
     <main className="page">
@@ -268,17 +289,12 @@ export function SessionPage() {
             </button>
           </div>
           {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
-          {failGif ? (
+          {reactionGif ? (
             <div className="tease-row">
               <div className="tease-gif">
-                <iframe src={failGif.embed} title={failGif.title} allowFullScreen />
+                <iframe src={reactionGif.embed} title={reactionGif.title} allowFullScreen />
               </div>
-              <div>
-                {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
-                <p className="tease-credit">
-                  <a href={failGif.href}>via GIPHY</a>
-                </p>
-              </div>
+              {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
             </div>
           ) : null}
           {result === "correct" || result === "revealed" ? <WordDetails word={word} /> : null}
