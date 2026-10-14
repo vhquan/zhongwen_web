@@ -28,6 +28,13 @@ const SUCCESS_GIFS: Gif[] = [
   { embed: "https://giphy.com/embed/2wuzQFlpBSpZnyRgy3", title: "surprised kid" },
   { embed: "https://giphy.com/embed/mBcAMbc1Nu3UDYd9l4", title: "sus cat" },
   { embed: "https://giphy.com/embed/PdZj33WnsGgV5lo5vU", title: "sticker" },
+  { embed: "https://giphy.com/embed/YrD1PQldGsstG", title: "girl door" },
+  { embed: "https://giphy.com/embed/UpobWd0mSpRfO", title: "kiss" },
+  { embed: "https://giphy.com/embed/sWBzg2D15WwQjHcxbt", title: "corgi smirk" },
+  { embed: "https://giphy.com/embed/PklKBQ4bj7XXRHByqs", title: "baby yay" },
+  { embed: "https://giphy.com/embed/QxY6uAZCuc6aDGOiST", title: "cute kitty" },
+  { embed: "https://giphy.com/embed/rVCMZBkGQiHheWxFST", title: "cute cats" },
+  { embed: "https://giphy.com/embed/xcIlI0798VgnPYUQwj", title: "cute cat" },
 ];
 
 function pickGif(gifs: Gif[]): Gif {
@@ -41,12 +48,24 @@ const UNKNOWN_GIFS: Gif[] = [
   { embed: "https://giphy.com/embed/xUXCTpkqwLeh2SrZ4T", title: "kid learning" },
   { embed: "https://giphy.com/embed/dvtl5jBWB35pC", title: "writers block" },
   { embed: "https://giphy.com/embed/NFA61GS9qKZ68", title: "reading" },
+  { embed: "https://giphy.com/embed/HfFccPJv7a9k4", title: "shrug" },
+  { embed: "https://giphy.com/embed/Vbu1MROenErCauNAet", title: "wake up" },
+  { embed: "https://giphy.com/embed/xun2qNfnK1cV5r07GM", title: "jumping cat" },
+  { embed: "https://giphy.com/embed/0oIkdy76oYE8uPsPjy", title: "blank stare" },
+  { embed: "https://giphy.com/embed/WqVNinUEAyQPV0qbQE", title: "sleepy cat" },
 ];
 
 const FAIL_GIFS: Gif[] = [
   { embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV", title: "side-eye sad cat" },
   { embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb", title: "angry cat" },
   { embed: "https://giphy.com/embed/eEg1ziKuWI9m9jVv2a", title: "sad cat" },
+  { embed: "https://giphy.com/embed/6BZaFXBVPBtok", title: "bad" },
+  { embed: "https://giphy.com/embed/SqfHFPbzxw98xwFOiE", title: "moodman" },
+  { embed: "https://giphy.com/embed/qZgHBlenHa1zKqy6Zn", title: "cat face" },
+  { embed: "https://giphy.com/embed/WoF3yfYupTt8mHc7va", title: "arthur fist" },
+  { embed: "https://giphy.com/embed/fuDUlcnXPIGQ3AQaYj", title: "reaction mood" },
+  { embed: "https://giphy.com/embed/C9pAWFllHuvj5coj4L", title: "cute cat" },
+  { embed: "https://giphy.com/embed/Rv8PpSLd4zCMG2uivw", title: "sleepy cat" },
 ];
 
 function meaningOf(word: Word): string {
