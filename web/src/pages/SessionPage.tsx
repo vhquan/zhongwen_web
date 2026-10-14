@@ -23,7 +23,8 @@ export function SessionPage() {
   const [flipped, setFlipped] = useState(false);
   const [answer, setAnswer] = useState("");
   const [ignoreTones, setIgnoreTones] = useState(false);
-  const [checked, setChecked] = useState<null | boolean>(null);
+  const [result, setResult] = useState<null | "correct" | "wrong">(null);
+  const [hadWrong, setHadWrong] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,7 +37,8 @@ export function SessionPage() {
         setIndex(0);
         setFlipped(false);
         setAnswer("");
-        setChecked(null);
+        setResult(null);
+        setHadWrong(false);
         setShowHint(false);
       })
       .catch((err: Error) => setError(err.message));
@@ -49,15 +51,29 @@ export function SessionPage() {
     setIndex((current) => current + 1);
     setFlipped(false);
     setAnswer("");
-    setChecked(null);
+    setResult(null);
+    setHadWrong(false);
     setShowHint(false);
   }
 
-  async function record(result: "correct" | "wrong") {
+  async function record(review: "correct" | "wrong") {
     if (!word || busy) return;
     setBusy(true);
     try {
-      await postProgress(word.id, studyMode, result);
+      await postProgress(word.id, studyMode, review);
+      nextCard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save progress");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function bypassWord() {
+    if (!word || busy) return;
+    setBusy(true);
+    try {
+      await postProgress(word.id, "dictation", "wrong");
       nextCard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save progress");
@@ -69,26 +85,39 @@ export function SessionPage() {
   async function submitDictation(event: FormEvent) {
     event.preventDefault();
     if (!word) return;
-    if (checked !== null) {
+    if (result === "correct") {
       nextCard();
       return;
     }
     if (!answer.trim() || busy) return;
     const ok = checkPinyin(answer, word, ignoreTones);
-    setChecked(ok);
-    setBusy(true);
-    try {
-      await postProgress(word.id, "dictation", ok ? "correct" : "wrong");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save progress");
-    } finally {
-      setBusy(false);
+    if (ok) {
+      setResult("correct");
+      setBusy(true);
+      try {
+        await postProgress(word.id, "dictation", "correct");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save progress");
+      } finally {
+        setBusy(false);
+      }
+      return;
     }
+    setResult("wrong");
+    setHadWrong(true);
   }
 
   if (studyMode !== "flashcard" && studyMode !== "dictation") {
     return <main className="page">Unknown study mode.</main>;
   }
+
+  const dictationClass = [
+    "card",
+    result === "correct" ? "feedback-ok" : "",
+    result === "wrong" ? "feedback-wrong" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <main className="page">
@@ -135,16 +164,32 @@ export function SessionPage() {
           </div>
         </section>
       ) : (
-        <section className="card">
+        <section className={dictationClass}>
           <p className="prompt-hanzi">{word.hanzi}</p>
+          {result === "correct" ? (
+            <div className="result-banner result-banner--ok" role="status">
+              Correct
+            </div>
+          ) : null}
+          {result === "wrong" ? (
+            <div className="result-banner result-banner--bad" role="status">
+              Wrong
+            </div>
+          ) : null}
           <form className="dictation" onSubmit={submitDictation}>
             <label>
               Type pinyin
               <input
                 autoFocus
                 value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
-                readOnly={checked !== null}
+                onChange={(event) => {
+                  setAnswer(event.target.value);
+                  if (result === "wrong") setResult(null);
+                }}
+                readOnly={result === "correct"}
+                className={
+                  result === "correct" ? "input-ok" : result === "wrong" ? "input-wrong" : undefined
+                }
                 placeholder="nǐ / ni3 / ni"
                 autoCapitalize="off"
                 autoCorrect="off"
@@ -159,30 +204,28 @@ export function SessionPage() {
               />
               Ignore tones
             </label>
-            {checked === null ? (
-              <button type="submit" className="button" disabled={busy || !answer.trim()}>
-                Check
-              </button>
-            ) : (
+            {result === "correct" ? (
               <button type="submit" className="button">
                 Next
               </button>
+            ) : (
+              <button type="submit" className="button" disabled={busy || !answer.trim()}>
+                Check
+              </button>
             )}
+            {hadWrong && result !== "correct" ? (
+              <button type="button" className="button secondary" disabled={busy} onClick={bypassWord}>
+                Bypass
+              </button>
+            ) : null}
           </form>
-          {checked !== null ? (
-            <p className={checked ? "ok" : "error"}>{checked ? "Correct" : "Not quite"}</p>
-          ) : null}
           <div className="actions">
             <button type="button" className="ghost" onClick={() => setShowHint((value) => !value)}>
               {showHint ? "Hide strokes" : "Show stroke hint"}
             </button>
           </div>
-          {showHint || checked !== null ? (
-            <>
-              {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
-              {checked !== null ? <WordDetails word={word} /> : null}
-            </>
-          ) : null}
+          {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
+          {result === "correct" ? <WordDetails word={word} /> : null}
         </section>
       )}
     </main>
