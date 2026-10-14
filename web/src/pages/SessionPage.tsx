@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchWords, postProgress } from "../api";
 import { StrokeAnimation } from "../components/StrokeAnimation";
@@ -83,6 +83,8 @@ export function SessionPage() {
   const [busy, setBusy] = useState(false);
   const [sessionLog, setSessionLog] = useState<SessionEntry[]>([]);
   const [showSummary, setShowSummary] = useState(false);
+  const pinyinInputRef = useRef<HTMLInputElement | null>(null);
+  const unknownLockRef = useRef(false);
 
   useEffect(() => {
     if (!edition || !level) return;
@@ -99,6 +101,7 @@ export function SessionPage() {
         setShowHint(false);
         setSessionLog([]);
         setShowSummary(false);
+        unknownLockRef.current = false;
       })
       .catch((err: Error) => setError(err.message));
   }, [edition, level]);
@@ -134,6 +137,7 @@ export function SessionPage() {
     setSuccessGif(null);
     setUnknownGif(null);
     setShowHint(false);
+    unknownLockRef.current = false;
   }
 
   async function record(review: "correct" | "wrong") {
@@ -151,7 +155,8 @@ export function SessionPage() {
   }
 
   async function markUnknown() {
-    if (!word || busy || locked) return;
+    if (!word || busy || locked || unknownLockRef.current) return;
+    unknownLockRef.current = true;
     setUnknownGif(pickGif(UNKNOWN_GIFS));
     setResult("unknown");
     setBusy(true);
@@ -164,6 +169,34 @@ export function SessionPage() {
       setBusy(false);
     }
   }
+
+  const markUnknownRef = useRef(markUnknown);
+  markUnknownRef.current = markUnknown;
+  const nextCardRef = useRef(nextCard);
+  nextCardRef.current = nextCard;
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (studyMode !== "dictation" || showSummary) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        void markUnknownRef.current();
+        return;
+      }
+      if (event.key === "Enter" && locked) {
+        event.preventDefault();
+        nextCardRef.current();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [studyMode, showSummary, locked]);
+
+  useEffect(() => {
+    if (!locked || showSummary) return;
+    pinyinInputRef.current?.focus();
+  }, [locked, showSummary, result]);
 
   async function submitDictation(event: FormEvent) {
     event.preventDefault();
@@ -335,6 +368,7 @@ export function SessionPage() {
             <label>
               Type pinyin
               <input
+                ref={pinyinInputRef}
                 autoFocus
                 value={answer}
                 onChange={(event) => {
