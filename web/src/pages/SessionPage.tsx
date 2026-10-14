@@ -10,6 +10,25 @@ type DictationResult = null | "correct" | "wrong" | "revealed";
 
 const MAX_FAILS = 3;
 
+const FAIL_GIFS: Record<number, { embed: string; href: string; title: string }> = {
+  1: {
+    embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV",
+    href: "https://giphy.com/gifs/side-eye-sad-cat-ZJieMJ372LLjXsInfV",
+    title: "side-eye sad cat",
+  },
+  2: {
+    embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb",
+    href: "https://giphy.com/gifs/cat-meme-angry-stressed-f54Or4wFysQ7vVGeKb",
+    title: "angry cat",
+  },
+};
+
+const REVEAL_GIF = {
+  embed: "https://giphy.com/embed/eEg1ziKuWI9m9jVv2a",
+  href: "https://giphy.com/gifs/sad-cat-me-rn-eEg1ziKuWI9m9jVv2a",
+  title: "sad cat",
+};
+
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i -= 1) {
@@ -136,6 +155,8 @@ export function SessionPage() {
   ]
     .filter(Boolean)
     .join(" ");
+  const failGif =
+    result === "revealed" ? REVEAL_GIF : result === "correct" ? undefined : FAIL_GIFS[failCount];
 
   return (
     <main className="page">
@@ -247,19 +268,15 @@ export function SessionPage() {
             </button>
           </div>
           {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
-          {result === "revealed" ? (
+          {failGif ? (
             <div className="tease-row">
               <div className="tease-gif">
-                <iframe
-                  src="https://giphy.com/embed/eEg1ziKuWI9m9jVv2a"
-                  title="sad cat"
-                  allowFullScreen
-                />
+                <iframe src={failGif.embed} title={failGif.title} allowFullScreen />
               </div>
               <div>
-                <p className="tease">你真傻，答案是</p>
+                {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
                 <p className="tease-credit">
-                  <a href="https://giphy.com/gifs/sad-cat-me-rn-eEg1ziKuWI9m9jVv2a">via GIPHY</a>
+                  <a href={failGif.href}>via GIPHY</a>
                 </p>
               </div>
             </div>
