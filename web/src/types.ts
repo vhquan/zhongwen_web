@@ -43,6 +43,7 @@ export type Word = {
   pinyin: string;
   pinyinNumeric: string;
   pinyinPlain: string;
+  hanviet: string | null;
   senses: Sense[];
   progress: {
     flashcard: ModeProgress | null;

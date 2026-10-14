@@ -9,6 +9,7 @@ CREATE TABLE word (
   pinyin TEXT NOT NULL,
   pinyin_numeric TEXT NOT NULL,
   pinyin_plain TEXT NOT NULL,
+  hanviet TEXT,
   UNIQUE (edition, hsk_level, hanzi, pinyin)
 );
 

@@ -93,7 +93,8 @@ app.get("/api/words", (req, res) => {
   const words = db
     .prepare(
       `SELECT id, edition, hsk_level AS hskLevel, source_stt AS sourceStt,
-              hanzi, pinyin, pinyin_numeric AS pinyinNumeric, pinyin_plain AS pinyinPlain
+              hanzi, pinyin, pinyin_numeric AS pinyinNumeric, pinyin_plain AS pinyinPlain,
+              hanviet
        FROM word
        WHERE edition = ? AND hsk_level = ?
        ORDER BY source_stt IS NULL, source_stt, id`,

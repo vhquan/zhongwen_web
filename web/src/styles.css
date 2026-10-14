@@ -187,7 +187,19 @@ input:not([type="checkbox"]) {
 
 .pinyin {
   font-size: 1.4rem;
-  margin: 8px 0;
+  margin: 8px 0 4px;
+}
+
+.hanviet {
+  margin: 0 0 12px;
+  color: #9a3412;
+  font-style: italic;
+}
+
+.summary-list .hanviet-inline {
+  grid-column: 2;
+  color: #9a3412;
+  font-style: italic;
 }
 
 .senses,

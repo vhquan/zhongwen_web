@@ -194,6 +194,7 @@ def upsert_word(
     source_stt: int | None,
     hanzi: str,
     pinyin: str,
+    hanviet: str | None = None,
 ) -> int:
     numeric = pinyin_numeric(pinyin)
     plain = pinyin_plain(pinyin)
@@ -205,14 +206,18 @@ def upsert_word(
         (edition, level, hanzi, pinyin),
     ).fetchone()
     if existing:
+        conn.execute(
+            "UPDATE word SET hanviet = COALESCE(?, hanviet) WHERE id = ?",
+            (hanviet, existing[0]),
+        )
         return existing[0]
     cur = conn.execute(
         """
         INSERT INTO word (
-            edition, hsk_level, source_stt, hanzi, pinyin, pinyin_numeric, pinyin_plain
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            edition, hsk_level, source_stt, hanzi, pinyin, pinyin_numeric, pinyin_plain, hanviet
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (edition, level, source_stt, hanzi, pinyin, numeric, plain),
+        (edition, level, source_stt, hanzi, pinyin, numeric, plain, hanviet),
     )
     return int(cur.lastrowid)
 
@@ -255,7 +260,7 @@ def insert_example(
 
 def import_v2(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
     for sheet, level in V2_SHEETS.items():
-        df = pd.read_excel(xlsx, sheet_name=sheet)
+        df = pd.read_excel(xlsx, sheet_name=sheet, keep_default_na=False)
         df.columns = [str(c).strip() for c in df.columns]
         cols = list(df.columns)
         hanzi_col = find_col(cols, lambda c: c == "Từ mới")
@@ -268,6 +273,10 @@ def import_v2(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
         )
         trans_col = find_col(cols, lambda c: c == "Dịch")
         stt_col = find_col(cols, lambda c: c == "STT")
+        hanviet_col = find_col(
+            cols,
+            lambda c: c.casefold() in {"hán việt", "hán-việt", "han viet"},
+        )
         if not all([hanzi_col, pinyin_col, meaning_col]):
             raise RuntimeError(f"Missing required columns on {sheet}: {cols}")
 
@@ -284,6 +293,7 @@ def import_v2(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
                 cell_int(row[stt_col]) if stt_col else None,
                 hanzi,
                 pinyin,
+                cell_str(row[hanviet_col]) if hanviet_col else None,
             )
             sense_id = insert_sense(
                 conn,
@@ -311,12 +321,16 @@ def split_v3_examples(raw: str | None) -> list[str]:
 
 def import_v3(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
     for sheet, level in V3_SHEETS.items():
-        df = pd.read_excel(xlsx, sheet_name=sheet, header=2)
+        df = pd.read_excel(xlsx, sheet_name=sheet, header=2, keep_default_na=False)
         df.columns = [str(c).strip() for c in df.columns]
-        last_hanzi = last_pinyin = None
+        last_hanzi = last_pinyin = last_hanviet = None
         last_stt = None
         last_word_id = None
         sense_order = 0
+        hanviet_col = find_col(
+            list(df.columns),
+            lambda c: c.casefold() in {"hán việt", "hán-việt", "han viet"},
+        )
 
         for _, row in df.iterrows():
             hanzi = cell_str(row.get("TỪ MỚI"))
@@ -325,10 +339,12 @@ def import_v3(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
             meaning = cell_str(row.get("NGHĨA"))
             examples = cell_str(row.get("VÍ DỤ"))
             stt = cell_int(row.get("STT"))
+            hanviet = cell_str(row[hanviet_col]) if hanviet_col else None
 
             if hanzi:
                 last_hanzi = hanzi
                 last_pinyin = collapse_spaces(pinyin) if pinyin else last_pinyin
+                last_hanviet = hanviet
                 last_stt = stt if stt is not None else last_stt
                 last_word_id = None
                 sense_order = 0
@@ -343,7 +359,13 @@ def import_v3(conn: sqlite3.Connection, xlsx: pd.ExcelFile) -> None:
 
             if last_word_id is None:
                 last_word_id = upsert_word(
-                    conn, "3.0", level, last_stt, last_hanzi, last_pinyin
+                    conn,
+                    "3.0",
+                    level,
+                    last_stt,
+                    last_hanzi,
+                    last_pinyin,
+                    last_hanviet,
                 )
 
             sense_id = insert_sense(conn, last_word_id, sense_order, pos, meaning)
@@ -371,7 +393,12 @@ def main() -> int:
         v2 = conn.execute("SELECT COUNT(*) FROM word WHERE edition = '2.0'").fetchone()[0]
         v3 = conn.execute("SELECT COUNT(*) FROM word WHERE edition = '3.0'").fetchone()[0]
         senses = conn.execute("SELECT COUNT(*) FROM sense").fetchone()[0]
-        print(f"Imported words 2.0={v2} 3.0={v3} senses={senses} -> {DB_PATH}")
+        hanviet = conn.execute(
+            "SELECT COUNT(*) FROM word WHERE hanviet IS NOT NULL AND hanviet != ''"
+        ).fetchone()[0]
+        print(
+            f"Imported words 2.0={v2} 3.0={v3} senses={senses} hanviet={hanviet} -> {DB_PATH}"
+        )
         ba = conn.execute(
             """
             SELECT w.hanzi, w.pinyin, s.part_of_speech, s.meaning_vi

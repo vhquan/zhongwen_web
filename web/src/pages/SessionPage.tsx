@@ -306,6 +306,9 @@ export function SessionPage() {
                   <li key={item.word.id}>
                     <span className="ex-hanzi">{item.word.hanzi}</span>
                     <span className="pinyin-inline">{item.word.pinyin}</span>
+                    {item.word.hanviet ? (
+                      <span className="hanviet-inline">{item.word.hanviet}</span>
+                    ) : null}
                     <span className="muted">{meaningOf(item.word)}</span>
                   </li>
                 ))}
@@ -320,6 +323,9 @@ export function SessionPage() {
                   <li key={item.word.id}>
                     <span className="ex-hanzi">{item.word.hanzi}</span>
                     <span className="pinyin-inline">{item.word.pinyin}</span>
+                    {item.word.hanviet ? (
+                      <span className="hanviet-inline">{item.word.hanviet}</span>
+                    ) : null}
                     <span className="muted">{meaningOf(item.word)}</span>
                   </li>
                 ))}

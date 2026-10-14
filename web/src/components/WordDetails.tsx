@@ -4,6 +4,7 @@ export function WordDetails({ word }: { word: Word }) {
   return (
     <div className="details">
       <p className="pinyin">{word.pinyin}</p>
+      {word.hanviet ? <p className="hanviet">Hán Việt: {word.hanviet}</p> : null}
       <ul className="senses">
         {word.senses.map((sense) => (
           <li key={sense.id}>
