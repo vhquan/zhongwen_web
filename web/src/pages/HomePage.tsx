@@ -14,11 +14,16 @@ export function HomePage() {
   return (
     <main className="page">
       <header>
-        <p className="eyebrow">HSK Vocabulary Trainer</p>
-        <h1>Choose an HSK edition</h1>
+        <p className="eyebrow">Illiteracy eradication</p>
+        <h1>A modest campaign against staring blankly at Chinese</h1>
         <p className="lede">
-          Version 2.0 and 3.0 stay in separate catalogs. Flashcards, pinyin dictation, and
-          stroke animation all read from the local SQLite file.
+          This site exists so 汉字 stop looking like decorative wallpaper. You will flip
+          cards, write pinyin, and trace strokes until a character is a word again, not a
+          mysterious drawing. That is the whole program: wipe out a little illiteracy each
+          day, before it gets too comfortable.
+        </p>
+        <p className="lede">
+          Pick an HSK edition below. We provide the characters. You provide the stubbornness.
         </p>
       </header>
       {error ? <p className="error">{error}</p> : null}
