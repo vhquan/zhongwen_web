@@ -3,3 +3,4 @@ data/zhongwen.sqlite
 dist
 .DS_Store
 *.log
+resources/.hanviet-cache
