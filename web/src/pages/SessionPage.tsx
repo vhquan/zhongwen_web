@@ -6,7 +6,7 @@ import { WordDetails } from "../components/WordDetails";
 import { checkPinyin } from "../pinyin";
 import type { StudyMode, Word } from "../types";
 
-type DictationResult = null | "correct" | "wrong" | "revealed";
+type DictationResult = null | "correct" | "wrong" | "revealed" | "unknown";
 type Gif = { embed: string; title: string };
 
 const MAX_FAILS = 3;
@@ -28,9 +28,18 @@ const SUCCESS_GIFS: Gif[] = [
   { embed: "https://giphy.com/embed/PdZj33WnsGgV5lo5vU", title: "sticker" },
 ];
 
-function pickSuccessGif(): Gif {
-  return SUCCESS_GIFS[Math.floor(Math.random() * SUCCESS_GIFS.length)];
+function pickGif(gifs: Gif[]): Gif {
+  return gifs[Math.floor(Math.random() * gifs.length)];
 }
+
+const UNKNOWN_GIFS: Gif[] = [
+  { embed: "https://giphy.com/embed/pCL5Jri5hwA1TluGep", title: "dog drawing" },
+  { embed: "https://giphy.com/embed/oqbf0ikONmtxrjsQnD", title: "write that down" },
+  { embed: "https://giphy.com/embed/8dYmJ6Buo3lYY", title: "baby reading" },
+  { embed: "https://giphy.com/embed/xUXCTpkqwLeh2SrZ4T", title: "kid learning" },
+  { embed: "https://giphy.com/embed/dvtl5jBWB35pC", title: "writers block" },
+  { embed: "https://giphy.com/embed/NFA61GS9qKZ68", title: "reading" },
+];
 
 const FAIL_GIFS: Record<number, Gif> = {
   1: { embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV", title: "side-eye sad cat" },
@@ -62,6 +71,7 @@ export function SessionPage() {
   const [result, setResult] = useState<DictationResult>(null);
   const [failCount, setFailCount] = useState(0);
   const [successGif, setSuccessGif] = useState<Gif | null>(null);
+  const [unknownGif, setUnknownGif] = useState<Gif | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +87,7 @@ export function SessionPage() {
         setResult(null);
         setFailCount(0);
         setSuccessGif(null);
+        setUnknownGif(null);
         setShowHint(false);
       })
       .catch((err: Error) => setError(err.message));
@@ -84,7 +95,7 @@ export function SessionPage() {
 
   const word = words[index];
   const remaining = useMemo(() => Math.max(words.length - index, 0), [words.length, index]);
-  const locked = result === "correct" || result === "revealed";
+  const locked = result === "correct" || result === "revealed" || result === "unknown";
 
   function nextCard() {
     setIndex((current) => current + 1);
@@ -93,6 +104,7 @@ export function SessionPage() {
     setResult(null);
     setFailCount(0);
     setSuccessGif(null);
+    setUnknownGif(null);
     setShowHint(false);
   }
 
@@ -109,12 +121,13 @@ export function SessionPage() {
     }
   }
 
-  async function bypassWord() {
-    if (!word || busy) return;
+  async function markUnknown() {
+    if (!word || busy || locked) return;
+    setUnknownGif(pickGif(UNKNOWN_GIFS));
+    setResult("unknown");
     setBusy(true);
     try {
       await postProgress(word.id, "dictation", "wrong");
-      nextCard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save progress");
     } finally {
@@ -132,7 +145,7 @@ export function SessionPage() {
     if (!answer.trim() || busy) return;
     const ok = checkPinyin(answer, word, ignoreTones);
     if (ok) {
-      setSuccessGif(pickSuccessGif());
+      setSuccessGif(pickGif(SUCCESS_GIFS));
       setResult("correct");
       setBusy(true);
       try {
@@ -168,16 +181,18 @@ export function SessionPage() {
   const dictationClass = [
     "card",
     result === "correct" ? "feedback-ok" : "",
-    result === "wrong" || result === "revealed" ? "feedback-wrong" : "",
+    result === "wrong" || result === "revealed" || result === "unknown" ? "feedback-wrong" : "",
   ]
     .filter(Boolean)
     .join(" ");
   const reactionGif =
     result === "correct"
       ? successGif
-      : result === "revealed"
-        ? REVEAL_GIF
-        : FAIL_GIFS[failCount];
+      : result === "unknown"
+        ? unknownGif
+        : result === "revealed"
+          ? REVEAL_GIF
+          : FAIL_GIFS[failCount];
 
   return (
     <main className="page">
@@ -250,7 +265,7 @@ export function SessionPage() {
                 className={
                   result === "correct"
                     ? "input-ok"
-                    : result === "wrong" || result === "revealed"
+                    : result === "wrong" || result === "revealed" || result === "unknown"
                       ? "input-wrong"
                       : undefined
                 }
@@ -277,9 +292,9 @@ export function SessionPage() {
                 Check
               </button>
             )}
-            {failCount > 0 && !locked ? (
-              <button type="button" className="button secondary" disabled={busy} onClick={bypassWord}>
-                Bypass
+            {!locked ? (
+              <button type="button" className="button secondary" disabled={busy} onClick={markUnknown}>
+                Don't know
               </button>
             ) : null}
           </form>
@@ -297,7 +312,9 @@ export function SessionPage() {
               {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
             </div>
           ) : null}
-          {result === "correct" || result === "revealed" ? <WordDetails word={word} /> : null}
+          {result === "correct" || result === "revealed" || result === "unknown" ? (
+            <WordDetails word={word} />
+          ) : null}
         </section>
       )}
     </main>
