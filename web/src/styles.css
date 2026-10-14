@@ -211,6 +211,12 @@ input.input-wrong {
   border-color: #fca5a5;
 }
 
+.tease {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+  color: #9a3412;
+}
+
 .ex-hanzi {
   font-size: 1.05rem;
 }

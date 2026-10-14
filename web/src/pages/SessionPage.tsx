@@ -6,6 +6,10 @@ import { WordDetails } from "../components/WordDetails";
 import { checkPinyin } from "../pinyin";
 import type { StudyMode, Word } from "../types";
 
+type DictationResult = null | "correct" | "wrong" | "revealed";
+
+const MAX_FAILS = 5;
+
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
   for (let i = next.length - 1; i > 0; i -= 1) {
@@ -23,8 +27,8 @@ export function SessionPage() {
   const [flipped, setFlipped] = useState(false);
   const [answer, setAnswer] = useState("");
   const [ignoreTones, setIgnoreTones] = useState(false);
-  const [result, setResult] = useState<null | "correct" | "wrong">(null);
-  const [hadWrong, setHadWrong] = useState(false);
+  const [result, setResult] = useState<DictationResult>(null);
+  const [failCount, setFailCount] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -38,7 +42,7 @@ export function SessionPage() {
         setFlipped(false);
         setAnswer("");
         setResult(null);
-        setHadWrong(false);
+        setFailCount(0);
         setShowHint(false);
       })
       .catch((err: Error) => setError(err.message));
@@ -46,13 +50,14 @@ export function SessionPage() {
 
   const word = words[index];
   const remaining = useMemo(() => Math.max(words.length - index, 0), [words.length, index]);
+  const locked = result === "correct" || result === "revealed";
 
   function nextCard() {
     setIndex((current) => current + 1);
     setFlipped(false);
     setAnswer("");
     setResult(null);
-    setHadWrong(false);
+    setFailCount(0);
     setShowHint(false);
   }
 
@@ -85,7 +90,7 @@ export function SessionPage() {
   async function submitDictation(event: FormEvent) {
     event.preventDefault();
     if (!word) return;
-    if (result === "correct") {
+    if (locked) {
       nextCard();
       return;
     }
@@ -103,8 +108,21 @@ export function SessionPage() {
       }
       return;
     }
+    const nextFails = failCount + 1;
+    setFailCount(nextFails);
+    if (nextFails >= MAX_FAILS) {
+      setResult("revealed");
+      setBusy(true);
+      try {
+        await postProgress(word.id, "dictation", "wrong");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save progress");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     setResult("wrong");
-    setHadWrong(true);
   }
 
   if (studyMode !== "flashcard" && studyMode !== "dictation") {
@@ -114,7 +132,7 @@ export function SessionPage() {
   const dictationClass = [
     "card",
     result === "correct" ? "feedback-ok" : "",
-    result === "wrong" ? "feedback-wrong" : "",
+    result === "wrong" || result === "revealed" ? "feedback-wrong" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -171,7 +189,7 @@ export function SessionPage() {
               Correct
             </div>
           ) : null}
-          {result === "wrong" ? (
+          {result === "wrong" || result === "revealed" ? (
             <div className="result-banner result-banner--bad" role="status">
               Wrong
             </div>
@@ -186,9 +204,13 @@ export function SessionPage() {
                   setAnswer(event.target.value);
                   if (result === "wrong") setResult(null);
                 }}
-                readOnly={result === "correct"}
+                readOnly={locked}
                 className={
-                  result === "correct" ? "input-ok" : result === "wrong" ? "input-wrong" : undefined
+                  result === "correct"
+                    ? "input-ok"
+                    : result === "wrong" || result === "revealed"
+                      ? "input-wrong"
+                      : undefined
                 }
                 placeholder="nǐ / ni3 / ni"
                 autoCapitalize="off"
@@ -204,7 +226,7 @@ export function SessionPage() {
               />
               Ignore tones
             </label>
-            {result === "correct" ? (
+            {locked ? (
               <button type="submit" className="button">
                 Next
               </button>
@@ -213,7 +235,7 @@ export function SessionPage() {
                 Check
               </button>
             )}
-            {hadWrong && result !== "correct" ? (
+            {failCount > 0 && !locked ? (
               <button type="button" className="button secondary" disabled={busy} onClick={bypassWord}>
                 Bypass
               </button>
@@ -225,7 +247,8 @@ export function SessionPage() {
             </button>
           </div>
           {showHint ? <StrokeAnimation hanzi={word.hanzi} /> : null}
-          {result === "correct" ? <WordDetails word={word} /> : null}
+          {result === "revealed" ? <p className="tease">你真傻，答案是</p> : null}
+          {result === "correct" || result === "revealed" ? <WordDetails word={word} /> : null}
         </section>
       )}
     </main>
