@@ -43,15 +43,11 @@ const UNKNOWN_GIFS: Gif[] = [
   { embed: "https://giphy.com/embed/NFA61GS9qKZ68", title: "reading" },
 ];
 
-const FAIL_GIFS: Record<number, Gif> = {
-  1: { embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV", title: "side-eye sad cat" },
-  2: { embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb", title: "angry cat" },
-};
-
-const REVEAL_GIF: Gif = {
-  embed: "https://giphy.com/embed/eEg1ziKuWI9m9jVv2a",
-  title: "sad cat",
-};
+const FAIL_GIFS: Gif[] = [
+  { embed: "https://giphy.com/embed/ZJieMJ372LLjXsInfV", title: "side-eye sad cat" },
+  { embed: "https://giphy.com/embed/f54Or4wFysQ7vVGeKb", title: "angry cat" },
+  { embed: "https://giphy.com/embed/eEg1ziKuWI9m9jVv2a", title: "sad cat" },
+];
 
 function meaningOf(word: Word): string {
   return word.senses.map((sense) => sense.meaningVi).filter(Boolean).join("; ") || "—";
@@ -77,6 +73,7 @@ export function SessionPage() {
   const [result, setResult] = useState<DictationResult>(null);
   const [failCount, setFailCount] = useState(0);
   const [successGif, setSuccessGif] = useState<Gif | null>(null);
+  const [failGif, setFailGif] = useState<Gif | null>(null);
   const [unknownGif, setUnknownGif] = useState<Gif | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +94,7 @@ export function SessionPage() {
         setResult(null);
         setFailCount(0);
         setSuccessGif(null);
+        setFailGif(null);
         setUnknownGif(null);
         setShowHint(false);
         setSessionLog([]);
@@ -135,6 +133,7 @@ export function SessionPage() {
     setResult(null);
     setFailCount(0);
     setSuccessGif(null);
+    setFailGif(null);
     setUnknownGif(null);
     setShowHint(false);
     unknownLockRef.current = false;
@@ -223,6 +222,7 @@ export function SessionPage() {
     }
     const nextFails = failCount + 1;
     setFailCount(nextFails);
+    setFailGif(pickGif(FAIL_GIFS));
     if (nextFails >= MAX_FAILS) {
       setResult("revealed");
       setBusy(true);
@@ -255,9 +255,9 @@ export function SessionPage() {
       ? successGif
       : result === "unknown"
         ? unknownGif
-        : result === "revealed"
-          ? REVEAL_GIF
-          : FAIL_GIFS[failCount];
+        : result === "wrong" || result === "revealed"
+          ? failGif
+          : null;
 
   return (
     <main className="page">
